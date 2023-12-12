@@ -14,5 +14,6 @@ All scripts are made using the language **Golang**.
 | [x] -  | Binary Search  |
 | [x] -  | Recursive Sum  |
 | [ ] -  | Get High Element  |
-| [ ] -  | Quick Sort  |
-
+| [ ] -  | Quick Sort |
+| [ ] -  | Merge Sort |
+| [ ] -  | Hash Table |
