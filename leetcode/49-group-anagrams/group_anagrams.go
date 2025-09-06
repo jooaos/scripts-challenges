@@ -11,14 +11,6 @@ func GroupAnagrams(strs []string) [][]string {
 		anagramMap[alphabet] = append(anagramMap[alphabet], strs[i])
 	}
 
-	// for _, item := range strs {
-	// 	var alphabet [26]int
-	// 	for _, letter := range item {
-	// 		alphabet[letter-'a']++
-	// 	}
-	// 	anagramMap[alphabet] = append(anagramMap[alphabet], item)
-	// }
-
 	output := [][]string{}
 
 	for _, item := range anagramMap {

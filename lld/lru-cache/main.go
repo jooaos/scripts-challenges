@@ -3,93 +3,96 @@ package main
 import "fmt"
 
 type Node struct {
-	Key  int
-	Val  int
-	Next *Node
-	Prev *Node
+	key, value int
+	prev, next *Node
+}
+
+type DoublyLinkedList struct {
+	head, tail *Node
+}
+
+func NewDoublyLinkedList() *DoublyLinkedList {
+	head := &Node{}
+	tail := &Node{}
+	head.next = tail
+	tail.prev = head
+	return &DoublyLinkedList{head, tail}
+}
+
+func (dll *DoublyLinkedList) AddToFront(node *Node) {
+	node.next = dll.head.next
+	node.prev = dll.head
+	dll.head.next.prev = node
+	dll.head.next = node
+}
+
+func (dll *DoublyLinkedList) RemoveNode(node *Node) {
+	node.prev.next = node.next
+	node.next.prev = node.prev
+}
+
+func (dll *DoublyLinkedList) MoveToFront(node *Node) {
+	dll.RemoveNode(node)
+	dll.AddToFront(node)
+}
+
+func (dll *DoublyLinkedList) RemoveTail() *Node {
+	if dll.tail.prev == dll.head {
+		return nil
+	}
+	lru := dll.tail.prev
+	dll.RemoveNode(lru)
+	return lru
 }
 
 type LRUCache struct {
-	cache    map[int]*Node
 	capacity int
-	recentD  *Node
-	leastD   *Node
+	cache    map[int]*Node
+	list     *DoublyLinkedList
 }
 
 func Constructor(capacity int) LRUCache {
-	recentD := &Node{Val: 0}
-	leastD := &Node{Val: 0}
-
-	recentD.Next, leastD.Prev = leastD, recentD
-
 	return LRUCache{
 		capacity: capacity,
 		cache:    make(map[int]*Node),
-		recentD:  recentD,
-		leastD:   leastD,
+		list:     NewDoublyLinkedList(),
 	}
 }
 
-func (l *LRUCache) Get(key int) int {
-	if _, ok := l.cache[key]; !ok {
-		return -1
+func (c *LRUCache) Get(key int) int {
+	if node, exists := c.cache[key]; exists {
+		c.list.MoveToFront(node)
+		return node.value
 	}
-	node := l.cache[key]
-	l.remove(node)
-	l.insert(node)
-	return node.Val
+	return -1
 }
 
-func (l *LRUCache) Put(key int, value int) {
-	if _, ok := l.cache[key]; ok {
-		node := l.cache[key]
-		node.Val = value
-		l.remove(node)
-		l.insert(node)
+func (c *LRUCache) Put(key int, value int) {
+	if node, exists := c.cache[key]; exists {
+		node.value = value
+		c.list.MoveToFront(node)
 	} else {
-		if len(l.cache) == l.capacity {
-			delete(l.cache, l.leastD.Prev.Key)
-			l.remove(l.leastD.Prev)
+		if len(c.cache) >= c.capacity {
+			lru := c.list.RemoveTail()
+			if lru != nil {
+				delete(c.cache, lru.key)
+			}
 		}
-
-		newNode := &Node{
-			Key: key,
-			Val: value,
-		}
-		l.cache[key] = newNode
-		l.insert(newNode)
+		newNode := &Node{key: key, value: value}
+		c.list.AddToFront(newNode)
+		c.cache[key] = newNode
 	}
-}
-
-func (l *LRUCache) insert(node *Node) {
-	node.Next = l.recentD.Next
-	node.Prev = l.recentD
-	l.recentD.Next.Prev = node
-	l.recentD.Next = node
-}
-
-func (l *LRUCache) remove(node *Node) {
-	node.Prev.Next = node.Next
-	node.Next.Prev = node.Prev
 }
 
 func main() {
-	obj := Constructor(2)
-	// param_1 := obj.Get(key)
-	obj.Put(1, 1)
-	obj.Put(2, 2)
-	obj.Put(3, 3)
-	obj.Put(4, 4)
-	// obj.Get(2)
-	// obj.Put(1, 1)
-
-	fmt.Println(*obj.recentD.Next)
-	fmt.Println(*obj.leastD.Prev)
+	lru := Constructor(2)
+	lru.Put(1, 1)
+	lru.Put(2, 2)
+	fmt.Println(lru.Get(1)) // 1
+	lru.Put(3, 3)           // evicts key 2
+	fmt.Println(lru.Get(2)) // -1 (not found)
+	lru.Put(4, 4)           // evicts key 1
+	fmt.Println(lru.Get(1)) // -1
+	fmt.Println(lru.Get(3)) // 3
+	fmt.Println(lru.Get(4)) // 4
 }
-
-/**
- * Your LRUCache object will be instantiated and called as such:
- * obj := Constructor(capacity);
- * param_1 := obj.Get(key);
- * obj.Put(key,value);
- */
